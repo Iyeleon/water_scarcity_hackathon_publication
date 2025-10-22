@@ -89,7 +89,7 @@ Traditional hydrological models, while effective, are often region-specific and 
 limiting their scalability and transferability across different catchments \citep{beven2012rainfall,singh1995}. 
 In contrast, machine learning approaches leverage rich datasets with lagged and contextual features to 
 capture complex temporal and spatial patterns, providing flexibility and predictive power across diverse 
-hydrological settings \citep{mosavi2018, kratzert2019}. My approach builds on this paradigm by using gradient boosting 
+hydrological settings \citep{mosavi2018, kratzert2019}. The project builds on this paradigm by using gradient boosting 
 trees \citep{prokhorenkova2018} combined with chained multi-output regression \citep{spyromitros2016} to model the spatio-temporal nature of streamflow forecasting, explicitly accounting for dependencies across 
 multiple future time steps. \\
 
@@ -129,10 +129,10 @@ on the magnitude of predictions and local variability. This approach ensures tha
 where uncertainty is high and narrower where the model is more confident, improving efficiency and coverage under 
 heteroscedastic data \citep{deutschmann2023}.\\
 
-Building on these ideas, we applied relative conformal calibration (RCC) by expressing nonconformity scores relative to predicted 
-values and calibrating them within spatially homogeneous groups identified via k-means clustering. This approach 
-produces locally scaled, interpretable, and robust prediction intervals, ensuring reliable uncertainty estimates 
-for spatiotemporally heterogeneous streamflow forecasts.
+Building on these ideas, we expressed nonconformity scores relative to predicted values and calibrating them 
+within spatially homogeneous groups identified via k-means clustering. This approach, termed Relative Conformal 
+calibration (RCC), produces locally scaled, interpretable, and robust prediction intervals, ensuring reliable uncertainty 
+estimates for spatiotemporally heterogeneous streamflow forecasts. 
 
 \subsection{Data Description}
 \subsubsection*{Dataset Overview}
@@ -142,7 +142,7 @@ model on historical data. The evaluation and mini-challenge sets consists of uns
 stations to evaluate the model's performance on the public leaderboard.
 
 % \renewcommand{\arraystretch}{1.5}
-\begin{table}[ht]
+\begin{table}[!htp]
 \centering
 \begin{tabular}{llllcc}
     \hline
@@ -193,7 +193,7 @@ and zones exhibit greater spatial consistency, making them ideal for spatial fea
 aggregation. 
 
 \begin{figure}[htbp]
-    \includegraphics[width=1.0\textwidth]{./assets/images/Boxplot of Average Areas per Geoscale per Location.png}
+    \includegraphics[width=1.0\textwidth]{./assets/images/Boxplot of Average Areas per Geoscale per Location_2.png}
     \caption{Boxplot comparing areas in the four geoscales in Brazil and France. The maps illustrate spatial variation in size and structure across regions, sectors, sub-sectors, and zones, highlighting differences in spatial consistency between the two countries.}
     \label{fig:geoscale_averages_per_location}
 \end{figure} 
@@ -250,7 +250,7 @@ We review the main feature groups to understand their distributions, variability
     learning region-specific hydrological behavior, and are suitable proxies for such homogenous soil features 
     \citep{arsenault2023}.
     \begin{figure}[htbp]
-        \includegraphics[width=1.0\textwidth]{./assets/images/location_features_distribution.png}
+        \includegraphics[width=1.0\textwidth]{./assets/images/location_features_distribution_2.png}
         \caption{Location-based features across the two countries.}
         \label{fig:location_based_features}
     \end{figure}
@@ -271,14 +271,14 @@ We review the main feature groups to understand their distributions, variability
         \centering
         \begin{subfigure}[h]{1.0\textwidth}
             \centering
-            \includegraphics[width=\textwidth]{./assets/images/soil_feature_profile_depth.png}
+            \includegraphics[width=\textwidth]{./assets/images/soil_feature_profile_depth_2.png}
             \caption{Soil Depth Profile}
             \label{fig:soil_feature_profile_depth}
         \end{subfigure}
 
         \begin{subfigure}[h]{1.0\textwidth}
             \centering
-            \includegraphics[width=\textwidth]{./assets/images/soil_feature_profile_geoscale.png}
+            \includegraphics[width=\textwidth]{./assets/images/soil_feature_profile_geoscale_2.png}
             \caption{Soil Geoscales Profile}
             \label{fig:soil_feature_profile_geoscale}
         \end{subfigure}
@@ -312,7 +312,7 @@ We review the main feature groups to understand their distributions, variability
 
         \begin{subfigure}[h]{1.0\textwidth}
             \centering
-            \includegraphics[width=\textwidth]{./assets/images/river_ranking_average_discharge.png}
+            \includegraphics[width=\textwidth]{./assets/images/river_ranking_average_discharge_2.png}
             \caption{Average Discharge per River Rank}
             \label{fig:river_ranking_average_discharge}
         \end{subfigure}
@@ -389,10 +389,19 @@ relevant predictors from different feature groups:
         \item \textbf{Correlation Analysis:} We first analyze correlations at both local and global levels to identify 
         general patterns and dependencies within the climate data.
         \vspace{5mm}
-        \item \textbf{Structured Causal Models:} To move beyond correlation and uncover causal effects, we apply structured causal models across spatial scales, 
-        including local buffer zones and national regions. We estimate Average Treatment Effects (ATE) for key climate variables, quantifying their direct impact on the target 
-        while adjusting for confounders. Directed Acyclic Graphs (DAGs) consistently identify temperature and precipitation as key drivers across regions, with soil water volume (SWVL) 
-        emerging as a consistent driver in France. These findings are supported by counterfactual analyses that visualize potential outcomes under different climate conditions.
+        \item \textbf{Structured Causal Models:} To move beyond correlation and uncover causal effects, we apply structured causal models across spatial scales, \
+        including local buffer zones and national regions. For each sector, we construct Directed Acyclic Graphs (DAGs) using the ICALiNGAM algorithm to learn the \ 
+        causal structure among climate variables (temperature, precipitation, soil water volume, and evapotranspiration) and the target variable (weekly water flow).
+
+        After estimating the DAG for each set of variables, we quantify the direct effect of each climate variable on the target using the DoWhy causal inference framework.\ 
+        Specifically, for each variable, we define it as the treatment and weekly water flow as the outcome, then identify the causal effect using the backdoor criterion and\ 
+        estimate the Average Treatment Effect (ATE) via linear regression while adjusting for other variables in the graph.
+
+        Since this study is data-driven and not based on hydrological expertise, the learned DAGs were validated using established hydrological knowledge from the scientific literature.\ 
+        The inferred relationships were compared against widely recognized mechanisms describing the influence of temperature, precipitation, and soil moisture on runoff and streamflow \ 
+        \citep{seneviratne2010}. The DAGs consistently identify temperature and precipitation as key drivers\ 
+        of streamflow across regions, with soil water volume emerging as an important driver in France. Finally, we visualize counterfactual outcomes for selected variables to illustrate\ 
+        how variations in climate drivers could influence water flow across different sectors and regions
         \vspace{5mm}
         \item \textbf{Feature Importance:} Focusing on temperature, precipitation and soil moisture features, LightGBM is used to assess feature importance. Selecting the most predictive 
         features within these groups at different scales helps the model better represent key climate drivers.
@@ -419,8 +428,8 @@ relevant predictors from different feature groups:
 
 \begin{figure}[!htp]
     \centering
-    \includegraphics[width=0.85\textwidth]{./assets/images/ATEs.png}
-    \caption{Estimated Average Treatment Effects (ATE) of key climate variables across spatial scales. Strong causal influence is observed from temperature and precipitation.}
+    \includegraphics[width=0.85\textwidth]{./assets/images/ATEs_2.png}
+    \caption{Estimated Average Treatment Effects (ATE) of key climate variables across spatial scales, estimated using linear regression based on the backdoor criterion within the DoWhy causal inference framework. Strong causal influence is observed from temperature and precipitation across regions.}
     \label{fig:ate_heatmap}
 \end{figure}
 
@@ -452,7 +461,7 @@ To preserve temporal integrity, we use TimeSeriesSplit cross-validation. This en
     \label{fig:model_diagram}
 \end{figure}
 
-\begin{algorithm}[H]
+\begin{algorithm}[!htp]
 \caption{Chained Ensemble Forecasting}
 \begin{algorithmic}[1]
 \State \textbf{Input:} Feature matrix $X$, target series $y$, number of folds $C$, number of ensemble models $n$, number of clusters $k$, conformal quantile level $\alpha$
@@ -682,7 +691,7 @@ preserve temporal order and prevent data leakage. Model performance is evaluated
 \noindent This setup allows comparison of predictive accuracy, uncertainty quantification, and calibration 
 between models with and without soil features.
 
-\begin{table}[htbp]
+\begin{table}[!htbp]
 \centering
 \label{tab:metrics_comparison}
 \begin{tabular}{lcccc}
@@ -701,7 +710,7 @@ B - \textit{Without Soil Features} & 1.572 & 0.900 & 2.65 & \textbf{3.05} \\
 \subsubsection{Explainability}
 In this study, we focus on feature importance analyses aggregated across folds and weeks to interpret the model’s global behavior and temporal variation. While advanced explainability methods like SHAP values provide detailed local and global insights, they were not used here due to computational constraints and the complexity introduced by our ensemble model with multiple folds and repetitions.
 \\
-\noindent Instead, we rely on aggregated feature importance scores from the feature selection phase to capture variable influence on model predictions. Further explainability analyses, including residual diagnostics and local interpretability methods, remain valuable avenues for future work to enhance understanding of model performance and error characteristics.
+\noindent Instead, we rely on aggregated feature importance scores computed using prediction values change method, which quantifies how strongly each feature contributes to changes in model's predicted values. Further explainability analyses, including residual diagnostics and local interpretability methods, remain valuable avenues for future work to enhance understanding of model performance and error characteristics.
 
 \subsubsection*{Global Feature Importance}
 Feature importances are computed using the average feature importances across all models in the ensemble.
@@ -738,7 +747,9 @@ water\_flow\_rolling\_std\_4w & -         & 0.86 (8)  & -         & 0.68 (11) & 
 tp\_region\_lag\_1w           & -         & -         & -         & -         & 0.50 (10) \\
 \hline
 \end{tabular}
-\caption{Top feature importances (values) and ranks (in parentheses) per fold. "-" indicate feature not in top 10 for corresponding fold.}
+% \caption{Top feature importances (values) and ranks (in parentheses) per fold. "-" indicate feature not in top 10 for corresponding fold.}
+\caption{\textit{Top feature importances across cross-validation folds.}\\
+Eeach feature’s rank shown in parentheses. Dashes (–) indicate features not ranked among the top 10 for the respective week.}
 \label{tab:feat_importance_ranks_folds}
 \end{table}
 
@@ -763,7 +774,9 @@ water\_flow\_lag\_3w & 0.82 (10) & 0.71 (9) & 0.65 (10) & - \\
 tp\_region\_lag\_1w & - & 0.62 (10) & - & - \\
 \hline
 \end{tabular}
-\caption{Top feature importances (values) and ranks (in parentheses) per week. "-" indicates feature not in top 10 for corresponding week.}
+% \caption{Top feature importances (values) and ranks (in parentheses) per week. "-" indicates feature not in top 10 for corresponding week.}
+\caption{\textit{Top feature importances across forecast week.}\\
+Eeach feature’s rank shown in parentheses. Dashes (–) indicate features not ranked among the top 10 for the respective week.}
 \label{tab:feat_importance_ranks_weeks}   
 \end{table}
 \noindent The tables show that water flow lag features consistently rank among the top predictors across folds and weeks, indicating their strong temporal influence on streamflow. Empirical flow also remains a key feature, reflecting its importance as a hydrological prior. Other features such as rolling statistics and regional climate variables vary in importance depending on the fold or week, suggesting that local hydrological conditions and seasonal patterns significantly affect model predictions.
@@ -776,7 +789,7 @@ Given the model's complexity and reliance on diverse features, we assess robustn
 \subsubsection*{Out-of-Fold Validation}
 We evaluate the model's performance across five validation folds to ensure stable behavior across different training splits. Table~\ref{tab:mae_per_fold_week} reports the Mean Absolute Error (MAE) for each week.
 
-\begin{table}[ht]
+\begin{table}[!htp]
 \centering
 \begin{tabular}{lcccc}
 \hline
@@ -798,7 +811,7 @@ fold\_5 & 12.005 & 16.657 & 23.105 & 22.378 \\
 \subsubsection*{Spatiotemporal Generalization}
 To evaluate the model's ability to generalize across spatial and temporal domains, we introduce a held-out spatiotemporal validation split. This includes four stations from France and two from Brazil, excluded entirely from training. Table~\ref{tab:spatiotemporal_generalization_aggregated} shows MAE across weeks on this combined set.
 
-\begin{table}[ht]
+\begin{table}[!htp]
 \centering
 \begin{tabular}{lcccc}
 \hline
@@ -817,7 +830,7 @@ fold\_5 & 13.129 & 17.930 & 24.705 & 23.950 \\
 
 \noindent As shown in Table~\ref{tab:spatiotemporal_generalization_aggregated}, performance degrades slightly on the spatiotemporal set, though it remains within acceptable bounds. To provide fairer comparisons across stations, we report station-normalized MAE in Table~\ref{tab:spatiotemporal_generalization}.
 
-\begin{table}[ht]
+\begin{table}[!htp]
 \centering
 \begin{tabular}{lcccc}
 \hline
@@ -837,7 +850,7 @@ Spatio\_temporal\_split & 0.348 & 0.485 & \textbf{0.564} & \textbf{0.605} \\
 
 We also assess uncertainty calibration via the prediction interval width, normalized per station. Results are presented in Table~\ref{tab:normalized_interval_width}.
 
-\begin{table}[ht]
+\begin{table}[!htp]
 \centering
 \begin{tabular}{lcccc}
 \hline
@@ -870,7 +883,7 @@ The model uses moderate-sized datasets with internally generated features such a
 \subsubsection*{Training Runtime and Inference Efficiency}
 Training time increases with the number of base learners but can be parallelized across folds and ensemble members. Reducing the folds and/or number of models per fold substantially decreases latency and memory usage, making the model more deployable in resource-constrained environments.
 
-\begin{table}[H]
+\begin{table}[!htp]
 \centering
 \caption{Model Configuration Trade-offs}
 \begin{tabular}{lccccc}
@@ -893,7 +906,7 @@ allocation of shared water resources in a game theory simulation environment.
 Effective water policy must balance ecological protection, equitable access, and economic stability, reflecting 
 the broader principles of sustainable water management that call for joint consideration of social, economic and environmental 
 needs \citep{wang2025}. 
-Our approach emphasizes fairness—allocating water by priority—while ensuring sustainability for downstream ecosystems and resilience 
+The project approach emphasizes fairness—allocating water by priority—while ensuring sustainability for downstream ecosystems and resilience 
 under uncertainty.We iteratively test the simulation environment, manually adjusting key parameters (e.g., demand and penalty multipliers) 
 to understand how policy rules affect economic and ecological outcomes. This process aligns with simulation-based optimization approaches in 
 water resource research, which are often used to explore policy trade-offs under uncertainty \citep{tian2019,tang2021,fu2020}. 
@@ -1151,7 +1164,7 @@ Notably, the final run of the optimization yielded a Pareto front consisting of 
 \subsection{Observations}
 \begin{figure}
     \centering
-    \includegraphics[width=0.7\textwidth]{./assets/images/objectives_correlation.png}
+    \includegraphics[width=0.7\textwidth]{./assets/images/objectives_correlation_2.png}
     \caption{Correlation matrix of optimization objectives. The plot highlights strong inverse relationships between key objectives, particularly between actor satisfaction and ecological impact ($r = -1.0$), and between cooperation and economic outcome ($r = -0.7$). These correlations underscore the inherent trade-offs in the multi-objective optimization landscape.}
     \label{fig:objectives_correlation}
 \end{figure}
@@ -1262,62 +1275,71 @@ Conceptualization: D.A.; Methodology: D.A; Data curation: D.A. Data visualisatio
 
 \begin{thebibliography}{}
 
-\bibitem[Beven, 2012]{beven2012rainfall}
-\textbf{Beven, KJ} (2012) \emph{Rainfall-Runoff Modelling: The Primer}. \textit{Chichester: Wiley-Blackwell}.
-
-\bibitem[Singh, 1995]{singh1995}
-\textbf{Singh VP} (1995) Computer Models of Watershed Hydrology, \textit{Water Resources Publications}
-
-\bibitem[Mosavi et al., 2018]{mosavi2018}
-\textbf{Mosavi A, Ozturk P, and Chau KW} (2018) Flood prediction using machine learning models: A review, \textit{Water} \textit{10}(11), {1536}.
-
-\bibitem[Kratzert et al., 2019]{kratzert2019}
-\textbf{Kratzert F, Klotz D, Brenner C, Schulz K, and Herrnegger M} (2019) Neural Hydrology: Interpreting LSTMs in Hydrology, \textit{Hydrology and Earth System Sciences} \textit{23} {375}–--{397}.
-
-\bibitem[Prokhorenkova et al., 2018]{prokhorenkova2018}
-\textbf{Prokhorenkova L, Gusev G, Vorobev A, Dorogush A, and Gulin A} (2018) CatBoost: unbiased boosting with categorical features, \textit{Advances in Neural Information Processing Systems} \textit{31}.
-
-\bibitem[Spyromitros et al., 2016]{spyromitros2016}
-\textbf{Spyromitros-Xioufis E, Tsoumakas G, Groves W, and Vlahavas I} (2016) Multi-target regression via input space expansion: Treating targets as inputs, \textit{European Conference on Machine Learning and Principles and Practice of Knowledge Discovery in Databases} {105}--–{120} {Springer}
-
-\bibitem[Romano et al., 2019]{romano2019}
-\textbf{Romano Y, Patterson E, and Candes EJ} (2019) Conformalized quantile regression, \textit{Advances in Neural Information Processing Systems} \textit{32}.
-
 \bibitem[Angelopoulos and Bates, 2022]{angebates2022}
 \textbf{Angelopoulos A and Bates S} (2022) A gentle introduction to conformal prediction and distribution-free uncertainty quantification, \textit{arXiv e-prints} \textit{Art. no. arXiv:2107.07511v6, 2022. doi:10.48550/arXiv.2107.07511}
-
-\bibitem[Sousa et al., 2022]{sousa2022}
-\textbf{Sousa M, Tomé AM, and Moreira J} (2022) Improved conformalized quantile regression, \textit{arXiv e-prints} \textit{Art. no. arXiv:2207.02808, 2022. doi:10.48550/arXiv.2207.02808}
-
-\bibitem[Hort et al., 2024 ]{hjort2024}
-\textbf{Hjort A, Williams JP, and Pensar J} (2024) Clustered Conformal Prediction for the Housing Market, \textit{Proceedings of the Thirteenth Symposium on Conformal and Probabilistic Prediction with Applications}, \textit{Proceedings of Machine Learning Research PMLR} 230:366-386, Available from https://proceedings.mlr.press/v230/hjort24a.html.
-
-\bibitem[Ding et al., 2023]{ding2023}
-\textbf{Ding T, Angelopoulos AN, Bates S, Jordan M, and Tibshirani R} (2023) Class-Conditional Conformal Prediction with Many Classes, \textit{Thirty-seventh Conference on Neural Information Processing Systems}, Available from https://openreview.net/forum?id=mYz6ApeU4J.
-
-\bibitem[Marx et al., 2022]{marx2022}
-\textbf{Marx C, Zhao S, Neiswanger W, and Ermon S} (2022). Modular Conformal Calibration, \textit{Proceedings of the 39th International Conference on Machine Learning (ICML)} Available at: https://arxiv.org/abs/2206.11468
-
-\bibitem[Deutsmann et al., 2023]{deutschmann2023}
-\textbf{Deutschmann N, Rigotti M, and Rodríguez Martínez M} (2023) Adaptive Conformal Regression with Jackknife+ Rescaled Scores, \textit{arXiv preprint arXiv:2305.19901}, Available at: https://arxiv.org/abs/2305.19901
 
 \bibitem[Arsenault et al., 2023]{arsenault2023}
 \textbf{Arsenault R, Martel J-L, Brunet F, Brissette F, and Mai J} (2023) Continuous streamflow Prediction in Ungauged Basins: Long Short-Term Memory in Neural Networks Clearly Outperform Traditional Hydrological Models, \textit{Hydrology and Earth System Sciences}, \textit{27}(1), 139–157, \textit{https://hess.copernicus.org/articles/27/139/2023/hess-27-139-2023.pdf}
 
-\bibitem[Kuhn and Johnson(2019)]{kuhnjohnson2019} 
-\textbf{Kuhn M and Johnson K} (2019). \textit{Feature Engineering and Selection: A Practical Approach for Predictive Models}. \textit{Chapman and Hall/CRC}.
+\bibitem[Beven, 2012]{beven2012rainfall}
+\textbf{Beven, KJ} (2012) \emph{Rainfall-Runoff Modelling: The Primer}. \textit{Chichester: Wiley-Blackwell}.
+
+\bibitem[Deutsmann et al., 2023]{deutschmann2023}
+\textbf{Deutschmann N, Rigotti M, and Rodríguez Martínez M} (2023) Adaptive Conformal Regression with Jackknife+ Rescaled Scores, \textit{arXiv preprint arXiv:2305.19901}, Available at: https://arxiv.org/abs/2305.19901
+
+\bibitem[Ding et al., 2023]{ding2023}
+\textbf{Ding T, Angelopoulos AN, Bates S, Jordan M, and Tibshirani R} (2023) Class-Conditional Conformal Prediction with Many Classes, \textit{Thirty-seventh Conference on Neural Information Processing Systems}, Available from https://openreview.net/forum?id=mYz6ApeU4J.
+
+\bibitem[Fu et al., 2020]{fu2020}
+\textbf{Fu Q, Li L, Li M, Li T, Liu D, and Cui S} (2018) A Simulation-Based Linear Fractional Programming Model for Adaptable Water Allocation Planning in the Main Stream of the Songhua River Basin, China, \textit{Water}, \textit{10}(5), 627, \textit{https://doi.org/10.3390/w10050627}
+
+\bibitem[Hort et al., 2024 ]{hjort2024}
+\textbf{Hjort A, Williams JP, and Pensar J} (2024) Clustered Conformal Prediction for the Housing Market, \textit{Proceedings of the Thirteenth Symposium on Conformal and Probabilistic Prediction with Applications}, \textit{Proceedings of Machine Learning Research PMLR} 230:366-386, Available from https://proceedings.mlr.press/v230/hjort24a.html.
 
 \bibitem[Hyndman and Athanasopolous, 2018]{hyndman2018}
 \textbf{Hyndman R and Athanasopolous G} (2018). \textit{Forecasting: Principles and Practice}. \textit{OTexts}.
 
+\bibitem[Kratzert et al., 2019]{kratzert2019}
+\textbf{Kratzert F, Klotz D, Brenner C, Schulz K, and Herrnegger M} (2019) Neural Hydrology: Interpreting LSTMs in Hydrology, \textit{Hydrology and Earth System Sciences} \textit{23} {375}–--{397}.
+
+\bibitem[Kuhn, 1955]{kuhn1955}
+\textbf{Kuhn HW} (1955) The Hungarian Method for the Assignment Problem, \textit{Naval Research Logistics Quarterly}, \textit{2}(1-2): 83-97.
+
+\bibitem[Kuhn and Johnson(2019)]{kuhnjohnson2019} 
+\textbf{Kuhn M and Johnson K} (2019). \textit{Feature Engineering and Selection: A Practical Approach for Predictive Models}. \textit{Chapman and Hall/CRC}.
+
+\bibitem[Kumar et al., 2023]{kumar2023}
+\textbf{Kumar V, Kedam N, Sharma KV, Mehta DJ, and Caloiero T} (2023) Advanced Machine Learning Techniques to Improve Hydrological Prediction: A Comparative Analysis of Streamflow Prediction Models, \textit{Water}, \textit{15}(14):2572, \textit{https://doi.org/10.3390/w15142572}
+
+\bibitem[Marx et al., 2022]{marx2022}
+\textbf{Marx C, Zhao S, Neiswanger W, and Ermon S} (2022). Modular Conformal Calibration, \textit{Proceedings of the 39th International Conference on Machine Learning (ICML)} Available at: https://arxiv.org/abs/2206.11468
+
+\bibitem[Mosavi et al., 2018]{mosavi2018}
+\textbf{Mosavi A, Ozturk P, and Chau KW} (2018) Flood prediction using machine learning models: A review, \textit{Water} \textit{10}(11), {1536}.
+
 \bibitem[Peng, 2005]{peng2005}
 \textbf{Peng H} (2005)Feature Selection Based on Mutual Information: Criteria of Max-Dependency, Max-Relevance, and Min-Redundancy. \textit{IEEE Transactions on Pattern Analysis and Machine Intelligence}, \textit{27}(8):1226-1238, \textit{doi:10.1109/TPAMI.2005.159}
+
+\bibitem[Prokhorenkova et al., 2018]{prokhorenkova2018}
+\textbf{Prokhorenkova L, Gusev G, Vorobev A, Dorogush A, and Gulin A} (2018) CatBoost: unbiased boosting with categorical features, \textit{Advances in Neural Information Processing Systems} \textit{31}.
+
+\bibitem[Romano et al., 2019]{romano2019}
+\textbf{Romano Y, Patterson E, and Candes EJ} (2019) Conformalized quantile regression, \textit{Advances in Neural Information Processing Systems} \textit{32}.
+
+\bibitem[Seneviratne et al., 2010]{seneviratne2010}
+\textbf{Seneviratne S I, Corti T, Davin E L, Hirschi M, Jaeger E B, Lehner I, Orlowsky B, and Teuling A J} (2010). Investigating soil moisture–climate interactions in a changing climate: A review. \textit{Earth-Science Reviews}, 99(3–4), 125–161. Available at: https://doi.org/10.1016/j.earscirev.2010.02.004
 
 \bibitem[Shortridge et al., 2016]{shortridge2016}
 \textbf{Shortridge JE, Guikema SD, Zaitchik BF.} (2016) Machine Learning Methods for Empirical Streamflow Simulation: A comparison of Model Accuracy. \textit{Hydrological Processes}, 30(3): 366-376. DOI: 10.1002/hyp.10573
 
-\bibitem[Kumar et al., 2023]{kumar2023}
-\textbf{Kumar V, Kedam N, Sharma KV, Mehta DJ, and Caloiero T} (2023) Advanced Machine Learning Techniques to Improve Hydrological Prediction: A Comparative Analysis of Streamflow Prediction Models, \textit{Water}, \textit{15}(14):2572, \textit{https://doi.org/10.3390/w15142572}
+\bibitem[Singh, 1995]{singh1995}
+\textbf{Singh VP} (1995) Computer Models of Watershed Hydrology, \textit{Water Resources Publications}
+
+\bibitem[Spyromitros et al., 2016]{spyromitros2016}
+\textbf{Spyromitros-Xioufis E, Tsoumakas G, Groves W, and Vlahavas I} (2016) Multi-target regression via input space expansion: Treating targets as inputs, \textit{European Conference on Machine Learning and Principles and Practice of Knowledge Discovery in Databases} {105}--–{120} {Springer}
+
+\bibitem[Sousa et al., 2022]{sousa2022}
+\textbf{Sousa M, Tomé AM, and Moreira J} (2022) Improved conformalized quantile regression, \textit{arXiv e-prints} \textit{Art. no. arXiv:2207.02808, 2022. doi:10.48550/arXiv.2207.02808}
 
 \bibitem[Stephens, 2000]{stephen2000}
 \textbf{Stephens M} (2000) Dealing with Label Switching in Mixture Models, \textit{Journal of the Royal Statistical Society: Series B}, \textit{62}(4): 795-809.
@@ -1325,20 +1347,14 @@ Conceptualization: D.A.; Methodology: D.A; Data curation: D.A. Data visualisatio
 \bibitem[Strehl et al., 2003]{strehl2003}
 \textbf{Strehl A and Ghosh J} (2003) Cluster Ensembles - A Knowledge Reuse Framework for Combining Multiple Partitions, \textit{Journal of Machine Learning Research}, \textit{3}: 583-617.
 
-\bibitem[Kuhn, 1955]{kuhn1955}
-\textbf{Kuhn HW} (1955) The Hungarian Method for the Assignment Problem, \textit{Naval Research Logistics Quarterly}, \textit{2}(1-2): 83-97.
-
-\bibitem[Wang, 2025]{wang2025}
-\textbf{Wang X} (2025) Sustainable Water Management: Balancing Social, Economic, and Environmental Needs. \textit{Journal of Lifestyle and SDG Reviews}, \textit{5}(5) e06606 \textit{https://doi.org/10.47172/2965-730X.SDGsReview.v5.n05.pe06606}
-
 \bibitem[Tian et al., 2019][tian2019]
 \textbf{Tian J, Guo S, Liu D, Pan Z, and Hong X} (2019) A Fair Approach for Multi-Objective Water Resources Allocation, \textit{Water Resources Management}, \textit{33}, 3633-3653 \textit{https://doi.org/10.1007/s11269-019-02323-5}
 
 \bibitem[Tang et al., 2021]{tang2021}
 \textbf{Tang X, He Y, Qi P, Chang Z, Jiang M and Dai Z} (2021) A New Multi-Objective Optimization Model of Water Resources Considering Fairness and Water Shortage Risk, \textit{Water}, \textit{13}, 2648, \textit{https://doi.org/10.3390/w13192648}
 
-\bibitem[Fu et al., 2020]{fu2020}
-\textbf{Fu Q, Li L, Li M, Li T, Liu D, and Cui S} (2018) A Simulation-Based Linear Fractional Programming Model for Adaptable Water Allocation Planning in the Main Stream of the Songhua River Basin, China, \textit{Water}, \textit{10}(5), 627, \textit{https://doi.org/10.3390/w10050627}
+\bibitem[Wang, 2025]{wang2025}
+\textbf{Wang X} (2025) Sustainable Water Management: Balancing Social, Economic, and Environmental Needs. \textit{Journal of Lifestyle and SDG Reviews}, \textit{5}(5) e06606 \textit{https://doi.org/10.47172/2965-730X.SDGsReview.v5.n05.pe06606}
 
 \end{thebibliography}
 \end{Backmatter}
